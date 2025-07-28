@@ -1,5 +1,4 @@
-# src/preprocess.py
-import fitz  # PyMuPDF
+import fitz  
 import os
 from typing import List
 import re
@@ -16,8 +15,8 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     return full_text
 
 def clean_text(text: str) -> str:
-    text = re.sub(r"\s+", " ", text)  # Remove extra spaces/newlines
-    text = re.sub(r"\\n", " ", text)  # Remove literal \n
+    text = re.sub(r"\s+", " ", text) 
+    text = re.sub(r"\\n", " ", text)  
     return text.strip()
 
 def split_into_chunks(text: str, max_words=400) -> List[str]:
@@ -29,7 +28,6 @@ def split_into_chunks(text: str, max_words=400) -> List[str]:
     for sentence in sentences:
         word_count = len(sentence.split())
 
-        # Split overly long sentence
         if word_count > max_words:
             words = sentence.split()
             for i in range(0, len(words), max_words):

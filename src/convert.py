@@ -48,7 +48,7 @@ def translate_chunks_to_text(input_folder="chunks", output_file="translated_outp
                     output.write(translated)
                     output.write("\n\n")
     
-    print(f"✅ Translated text file created at: {output_file}")
+    print(f"Translated text file created : {output_file}")
 
 if __name__ == "__main__":
     translate_chunks_to_text()
