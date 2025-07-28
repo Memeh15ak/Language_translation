@@ -4,7 +4,7 @@ A Streamlit web application that lets users upload a **PDF file** and translate 
 
 ---
 ## Working Example
-![RAG AGENT](https://github.com/Memeh15ak/Multiagent_system_A2A_ADK/blob/master/media/)
+![Example](https://github.com/Memeh15ak/Language_translation/blob/master/media/Example.gif)
 
 
 
