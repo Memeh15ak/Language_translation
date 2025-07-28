@@ -21,7 +21,6 @@ A Streamlit web application that lets users upload a **PDF file** and translate 
 - **LLM:** Gemini (via Google Generative AI API)
 - **Translation:** HuggingFace MarianMT (`Helsinki-NLP/opus-mt-en-hi` & `hi-en`)
 - **PDF Parsing:** PyMuPDF
-- **PDF Output:** `fpdf2` with Unicode font support
 - **Chunking:** NLTK sentence tokenizer
 
 ## 📂 Project Structure
@@ -61,9 +60,7 @@ cd pdf-translator-app
 
 ```bash
 python -m venv ragenv
-ragenv\Scripts\activate  # Windows
-# or
-source ragenv/bin/activate  # macOS/Linux
+ragenv\Scripts\activate  
 ```
 
 ### 3. Install Dependencies
@@ -72,11 +69,7 @@ source ragenv/bin/activate  # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 4. Download Required Font
-
-Download **Noto Sans Devanagari** font and place `NotoSansDevanagari-Regular.ttf` in the `/fonts` directory.
-
-### 5. Set Up Environment Variables
+### 4. Set Up Environment Variables
 
 Create a `.env` file in the root directory:
 
@@ -89,13 +82,14 @@ GOOGLE_API_KEY=your_google_generativeai_api_key
 2. Create a new API key
 3. Copy and paste it into your `.env` file
 
-### 6. Run the Application
+### 5. Run the Application
 
 ```bash
 streamlit run app.py
 ```
 
 The app will open in your default browser at `http://localhost:8501`
+
 
 ## 🎯 How to Use
 
@@ -112,7 +106,6 @@ Key libraries used:
 - `streamlit` - Web interface
 - `google-generativeai` - Gemini AI for text extraction and translation
 - `PyMuPDF` - PDF processing
-- `fpdf2` - PDF generation with Unicode support
 - `transformers` - HuggingFace MarianMT models
 - `nltk` - Text processing and chunking
 - `python-dotenv` - Environment variable management
@@ -130,4 +123,6 @@ The application supports customization of:
 - Translation models (MarianMT variants)
 - Font settings for PDF output
 - Gemini API parameters
+
+
 
