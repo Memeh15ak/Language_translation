@@ -1,0 +1,10 @@
+streamlit
+transformers
+torch
+python-dotenv
+sentence-transformers
+sentencepiece 
+google.generativeai
+PyMuPDF
+fpdf
+nltk
