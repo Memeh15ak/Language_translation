@@ -1,6 +1,6 @@
-# 📝 Hindi-English PDF Translator App
+# 📝 Language Translator App
 
-A Streamlit web application that lets users upload a **PDF file** and translate its content between **Hindi ↔ English** while preserving structure and layout. Tables, images, and flowcharts are first extracted as readable text using Gemini, chunked, translated, and finally **recombined into a translated PDF**.
+A Streamlit web application that lets users upload a **PDF file** and translate its content between **Hindi ↔ English** or vice versa while preserving structure and layout. Tables, images, and flowcharts are first extracted as readable text using Gemini, chunked, translated, and finally **recombined into a translated PDF**.
 
 ## Working Example
 
