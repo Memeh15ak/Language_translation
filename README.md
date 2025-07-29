@@ -4,7 +4,7 @@ A Streamlit web application that lets users upload a **PDF file** and translate 
 
 ## Working Example
 
-![Example](https://github.com/Memeh15ak/Language_translation/blob/master/media/Example.gif)
+![Example](https://github.com/Memeh15ak/Language_translation/blob/master/media/Gif_language.gif)
 
 ## 🚀 Features
 
