@@ -29,7 +29,7 @@ def intelligent_translate(text, tokenizer, model):
     
     return "\n".join(translated_sentences)
 
-def translate_chunks_to_text(input_folder="chunks", output_file="translated_output.pdf", direction="en_to_hi"):
+def translate_chunks_to_text(input_folder="chunks", output_file="translated_output.txt", direction="en_to_hi"):
     """
     Save as text file instead of PDF to avoid encoding issues
     """

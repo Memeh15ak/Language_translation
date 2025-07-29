@@ -6,24 +6,21 @@ import re
 from transformers import MarianMTModel, MarianTokenizer
 import nltk
 from nltk.tokenize import sent_tokenize
+import subprocess
+import base64
 
-# Paths
 SRC_DIR = os.path.join(os.getcwd(), "src")
 CHUNKS_DIR = "chunks"
-TRANSLATED_OUTPUT = "translated_output.txt"  # Changed to .txt
+TRANSLATED_OUTPUT = "translated_output.txt"
+FINAL_PDF = "final.pdf"
 DOC_PATH = "output.txt"
 
-# Add src to Python path
 sys.path.append(SRC_DIR)
 
-# Download NLTK data
-nltk.download("punkt")
-
-# Imports from your own modules
+nltk.download("punkt", quiet=True)
 from src.extract_content import read_pdf_text, ask_gemini_to_process, save_to_txt
 from src.preprocess import preprocess_document
 
-# Translation functions (from your new converter)
 def load_translation_model(direction="en_to_hi"):
     model_name = "Helsinki-NLP/opus-mt-en-hi" if direction == "en_to_hi" else "Helsinki-NLP/opus-mt-hi-en"
     tokenizer = MarianTokenizer.from_pretrained(model_name)
@@ -71,33 +68,75 @@ def translate_chunks_to_text(input_folder="chunks", output_file="translated_outp
     print(f"✅ Translated text file created at: {output_file}")
     return output_file
 
-# UI
+def convert_txt_to_pdf():
+    """
+    Convert translated text to PDF using the txt_to_pdf.py script
+    """
+    try:
+        txt_to_pdf_path = os.path.join(SRC_DIR, "txt_to_pdf.py")
+        result = subprocess.run([sys.executable, txt_to_pdf_path], 
+                              capture_output=True, text=True, cwd=os.getcwd())
+        
+        if result.returncode == 0:
+            print("PDF conversion successful")
+            return True
+        else:
+            print(f" PDF conversion failed: {result.stderr}")
+            return False
+    except Exception as e:
+        print(f" Error running PDF conversion: {str(e)}")
+        return False
+
+def display_pdf(pdf_path):
+    """
+    Display PDF in Streamlit
+    """
+    try:
+        with open(pdf_path, "rb") as f:
+            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+        
+        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="800" type="application/pdf"></iframe>'
+        st.markdown(pdf_display, unsafe_allow_html=True)
+        return True
+    except Exception as e:
+        st.error(f"Error displaying PDF: {str(e)}")
+        return False
+
+def get_pdf_download_link(pdf_path, filename):
+    """
+    Generate download link for PDF
+    """
+    try:
+        with open(pdf_path, "rb") as f:
+            pdf_data = f.read()
+        
+        b64_pdf = base64.b64encode(pdf_data).decode()
+        return pdf_data
+    except Exception as e:
+        st.error(f"Error creating download link: {str(e)}")
+        return None
+
 st.title("📄 Hindi ↔ English PDF Translator")
 st.markdown("---")
 
-# File uploader
 uploaded_pdf = st.file_uploader(
     "Upload PDF File", 
     type="pdf",
     help="Upload a PDF file to translate"
 )
 
-# Translation direction selector
 direction = st.selectbox(
     "Select Translation Direction", 
     ["English to Hindi", "Hindi to English"],
     help="Choose the direction for translation"
 )
 
-# Main processing
 if uploaded_pdf:
-    # Save uploaded file
     with open("temp.pdf", "wb") as f:
         f.write(uploaded_pdf.read())
     
     st.success("✅ PDF uploaded successfully.")
-    
-    # Display file info
+   
     file_details = {
         "Filename": uploaded_pdf.name,
         "File size": f"{uploaded_pdf.size} bytes",
@@ -108,22 +147,18 @@ if uploaded_pdf:
         for key, value in file_details.items():
             st.write(f"**{key}:** {value}")
 
-    # Translation button
     if st.button("🚀 Translate PDF", type="primary"):
         try:
-            # Step 1: Extract content
             with st.spinner("🔍 Extracting content using Gemini..."):
                 text = read_pdf_text("temp.pdf")
                 output = ask_gemini_to_process(text)
                 save_to_txt(output)
                 st.success("✅ Text extracted and saved")
 
-            # Step 2: Chunk the document
             with st.spinner("📚 Chunking the text..."):
                 preprocess_document(DOC_PATH, CHUNKS_DIR)
                 st.success("✅ Document chunked successfully")
 
-            # Step 3: Translate chunks
             with st.spinner("🌐 Translating chunks... (This may take a while)"):
                 translated_file = translate_chunks_to_text(
                     input_folder=CHUNKS_DIR,
@@ -132,16 +167,22 @@ if uploaded_pdf:
                 )
                 st.success("✅ Translation completed!")
 
-            # Step 4: Display results and download
+            # Step 4: Convert to PDF
+            with st.spinner("📄 Converting to PDF..."):
+                pdf_success = convert_txt_to_pdf()
+                if pdf_success:
+                    st.success("✅ PDF conversion completed!")
+                else:
+                    st.error(" PDF conversion failed!")
+                    raise Exception("PDF conversion failed")
+
             st.markdown("---")
             st.subheader("📄 Translation Results")
-            
-            # Read and display preview
+      
             with open(translated_file, "r", encoding="utf-8") as f:
                 translated_content = f.read()
-            
-            # Show preview
-            with st.expander("👀 Preview Translated Content"):
+           
+            with st.expander("👀 Preview Translated Text"):
                 preview_length = 1000
                 if len(translated_content) > preview_length:
                     st.text_area(
@@ -151,18 +192,39 @@ if uploaded_pdf:
                     )
                 else:
                     st.text_area("Full Content", translated_content, height=200)
-            
-            # Download button
-            st.download_button(
-                label="📥 Download Translated Document",
-                data=translated_content,
-                file_name=f"translated_{uploaded_pdf.name.replace('.pdf', '.txt')}",
-                mime="text/plain",
-                type="primary"
-            )
+    
+            st.subheader("📖 Final PDF")
+            if os.path.exists(FINAL_PDF):
+                if not display_pdf(FINAL_PDF):
+                    st.info("PDF preview not available in this browser. Please download to view.")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.download_button(
+                        label="📥 Download Text File",
+                        data=translated_content,
+                        file_name=f"translated_{uploaded_pdf.name.replace('.pdf', '.txt')}",
+                        mime="text/plain"
+                    )
+                
+                with col2:
+                    pdf_data = get_pdf_download_link(FINAL_PDF, f"translated_{uploaded_pdf.name}")
+                    if pdf_data:
+                        st.download_button(
+                            label="📥 Download PDF File",
+                            data=pdf_data,
+                            file_name=f"translated_{uploaded_pdf.name}",
+                            mime="application/pdf",
+                            type="primary"
+                        )
+            else:
+                st.error("PDF file not found!")
             
             # Statistics
-            col1, col2, col3 = st.columns(3)
+            st.markdown("---")
+            st.subheader("📊 Statistics")
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Characters", len(translated_content))
             with col2:
@@ -170,14 +232,16 @@ if uploaded_pdf:
             with col3:
                 chunk_count = len([f for f in os.listdir(CHUNKS_DIR) if f.endswith('.txt')]) if os.path.exists(CHUNKS_DIR) else 0
                 st.metric("Chunks Processed", chunk_count)
+            with col4:
+                pdf_size = os.path.getsize(FINAL_PDF) if os.path.exists(FINAL_PDF) else 0
+                st.metric("PDF Size", f"{pdf_size:,} bytes")
 
         except Exception as e:
-            st.error(f"❌ An error occurred during translation: {str(e)}")
-            st.info("Please try uploading a different PDF or check if the file is corrupted.")
+            st.error(f"Error occurred during translation: {str(e)}")
+            st.info("Try uploading a different PDF")
         
         finally:
-            # Cleanup temporary files
-            cleanup_files = ["temp.pdf", DOC_PATH, TRANSLATED_OUTPUT]
+            cleanup_files = ["temp.pdf", DOC_PATH]  
             cleanup_dirs = [CHUNKS_DIR]
             
             for file_path in cleanup_files:
@@ -194,7 +258,6 @@ if uploaded_pdf:
                     except:
                         pass
 
-# Sidebar with information
 with st.sidebar:
     st.header("ℹ️ Information")
     st.markdown("""
@@ -202,27 +265,40 @@ with st.sidebar:
     1. **Upload** your PDF file
     2. **Select** translation direction
     3. **Click** translate to process
-    4. **Download** the translated text file
+    4. **View** the translated PDF
+    5. **Download** both text and PDF files
     
     ### Supported formats:
     - Input: PDF files
-    - Output: Text files (.txt)
+    - Output: Text files (.txt) & PDF files (.pdf)
     
     ### Features:
     - Preserves document structure
     - Handles large documents
-    - Maintains formatting
-    - Unicode support
+    - Creates formatted PDF output
+    - Unicode support for Hindi
+    - PDF viewer integration
     """)
     
     st.markdown("---")
     st.markdown("**Note:** Translation may take several minutes for large documents.")
 
-# Footer
+with st.sidebar:
+    st.markdown("---")
+    if st.button("🧹 Clear All Files"):
+        cleanup_files = [TRANSLATED_OUTPUT, FINAL_PDF]
+        for file_path in cleanup_files:
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    st.success(f"Removed {file_path}")
+                except:
+                    st.error(f"Failed to remove {file_path}")
+
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: gray;'>"
-    "Made with ❤️ using Streamlit | AI-Powered Translation"
+    "Made with ❤️ using Streamlit | AI-Powered Translation with PDF Output"
     "</div>",
     unsafe_allow_html=True
 )
